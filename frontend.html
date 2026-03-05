@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Vault</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #131314;
+    --surface: #1E1F20;
+    --surface-hover: #333537;
+    --primary: #A8C7FA;
+    --on-primary: #062E6F;
+    --danger: #F2B8B5;
+    --on-danger: #601410;
+    --text-primary: #E3E3E3;
+    --text-secondary: #C4C7C5;
+    --outline: #444746;
+    --outline-variant: #44474680;
+    --success: #C4EED0;
+    --on-success: #072711;
+    
+    --font-family: 'Google Sans', system-ui, -apple-system, sans-serif;
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-pill: 100px;
+    --transition: 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    font-family: var(--font-family);
+    background-color: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 24px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  .title-group h1 {
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .title-group p {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--surface);
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--outline-variant);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #E2726E; 
+  }
+
+  .status-dot.connected {
+    background: #81C995; 
+  }
+
+  .section {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    border: 1px solid var(--outline-variant);
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 500px) {
+    .grid-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .data-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .data-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .data-value {
+    font-size: 15px;
+    color: var(--text-primary);
+    word-break: break-all;
+  }
+
+  .mono {
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 14px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--font-family);
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 10px 24px;
+    border-radius: var(--radius-pill);
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    color: var(--on-primary);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: #BBD6FB;
+  }
+
+  .btn-secondary {
+    background-color: var(--outline);
+    color: var(--text-primary);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #535756;
+  }
+
+  .btn-danger {
+    background-color: var(--danger);
+    color: var(--on-danger);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background-color: #F6C8C6;
+  }
+
+  .btn-success {
+    background-color: var(--success);
+    color: var(--on-success);
+  }
+
+  .btn-success:hover:not(:disabled) {
+    background-color: #9CE3B0;
+  }
+
+  .btn-text {
+    background: transparent;
+    color: var(--primary);
+    padding: 8px 16px;
+  }
+
+  .btn-text:hover:not(:disabled) {
+    background: rgba(168, 199, 250, 0.08);
+  }
+
+  .actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--outline-variant);
+  }
+
+  /* Added input styles to match the theme */
+  input {
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--outline);
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: 14px;
+    transition: var(--transition);
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  input::placeholder {
+    color: var(--text-secondary);
+  }
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+  <header class="header">
+    <div class="title-group">
+      <h1>Advanced Vault</h1>
+      <p>Secure Time-Locked ETH Vault</p>
+    </div>
+    <div class="status-badge">
+      <div id="status-indicator" class="status-dot"></div>
+      <span id="status">Idle</span>
+    </div>
+  </header>
+
+  <!-- WALLET -->
+  <div class="section">
+    <div class="section-title">Wallet Details</div>
+    <div class="data-item">
+      <span class="data-label">Address</span>
+      <span id="wallet" class="data-value mono" style="color: var(--text-secondary);">Not connected</span>
+    </div>
+    <div class="actions-row">
+      <button id="connectBtn" class="btn btn-primary">Connect Wallet</button>
+      <button id="disconnectBtn" class="btn btn-secondary" style="display:none;">Disconnect</button>
+    </div>
+  </div>
+
+  <!-- DEPOSIT -->
+  <div class="section">
+    <div class="section-title">Deposit</div>
+    <input id="depositAmount" placeholder="Amount in ETH">
+    <input id="lockTime" placeholder="Lock seconds">
+    <div class="actions-row" style="margin-top: 8px; padding-top: 0; border-top: none;">
+      <button class="btn btn-success" onclick="deposit()">Deposit</button>
+    </div>
+  </div>
+
+  <!-- WITHDRAW -->
+  <div class="section">
+    <div class="section-title">Withdraw</div>
+    <input id="withdrawAmount" placeholder="Amount in ETH">
+    <div class="actions-row" style="margin-top: 8px; padding-top: 0; border-top: none;">
+      <button class="btn btn-primary" onclick="withdraw()">Withdraw</button>
+    </div>
+  </div>
+
+  <!-- VAULT INFO -->
+  <div class="section">
+    <div class="section-title">Vault Info</div>
+    <div class="grid-2">
+      <div class="data-item">
+        <span class="data-label">Balance</span>
+        <span id="balance" class="data-value mono" style="color: var(--text-secondary);">-</span>
+      </div>
+      <div class="data-item">
+        <span class="data-label">Unlock Time</span>
+        <span id="unlock" class="data-value" style="color: var(--text-secondary);">-</span>
+      </div>
+    </div>
+    <div class="actions-row">
+      <button class="btn btn-secondary" onclick="loadVault()">Refresh</button>
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+
+const contractAddress =
+"0xe2ab9a4a119f88b7acc471a0baef0e4d803fa1a4";
+
+
+const abi = [
+
+"function deposit(uint256 lockDuration) payable",
+
+"function withdraw(uint256 amount)",
+
+"function getBalance() view returns(uint256)",
+
+"function getUnlockTime() view returns(uint256)"
+
+];
+
+
+let provider;
+let signer;
+let contract;
+let user;
+
+function setStatus(text) {
+  document.getElementById("status").innerText = text;
+}
+
+
+// CONNECT
+
+document.getElementById("connectBtn").onclick =
+async ()=>{
+
+provider =
+new ethers.providers.Web3Provider(window.ethereum);
+
+await provider.send("eth_requestAccounts",[]);
+
+signer = provider.getSigner();
+
+user = await signer.getAddress();
+
+contract =
+new ethers.Contract(contractAddress,abi,signer);
+
+document.getElementById("wallet").innerText =
+user;
+
+document.getElementById("connectBtn").style.display="none";
+document.getElementById("disconnectBtn").style.display="inline-flex";
+document.getElementById("status-indicator").classList.add("connected");
+
+loadVault();
+
+};
+
+
+
+// DISCONNECT
+
+document.getElementById("disconnectBtn").onclick =
+()=>{
+
+provider=null;
+signer=null;
+contract=null;
+user=null;
+
+document.getElementById("wallet").innerText=
+"Not connected";
+
+document.getElementById("balance").innerText="-";
+
+document.getElementById("unlock").innerText="-";
+
+document.getElementById("connectBtn").style.display="inline-flex";
+document.getElementById("disconnectBtn").style.display="none";
+document.getElementById("status-indicator").classList.remove("connected");
+
+};
+
+
+
+// DEPOSIT
+
+async function deposit(){
+
+const amt =
+document.getElementById("depositAmount").value;
+
+const lock =
+document.getElementById("lockTime").value;
+
+const value =
+ethers.utils.parseEther(amt);
+
+setStatus("Depositing...");
+
+const tx = await contract.deposit(lock,{value});
+await tx.wait();
+
+setStatus("Deposit complete");
+loadVault();
+
+}
+
+
+
+// WITHDRAW
+
+async function withdraw(){
+
+const amt =
+document.getElementById("withdrawAmount").value;
+
+const value =
+ethers.utils.parseEther(amt);
+
+setStatus("Withdrawing...");
+
+const tx = await contract.withdraw(value);
+await tx.wait();
+
+setStatus("Withdraw complete");
+loadVault();
+
+}
+
+
+
+// LOAD VAULT
+
+async function loadVault(){
+
+if(!contract) return;
+
+const bal =
+await contract.getBalance();
+
+const unlock =
+await contract.getUnlockTime();
+
+document.getElementById("balance").innerText =
+ethers.utils.formatEther(bal)+" ETH";
+
+if(unlock>0){
+
+const date =
+new Date(unlock*1000);
+
+document.getElementById("unlock").innerText =
+date.toLocaleString();
+
+} else {
+document.getElementById("unlock").innerText = "-";
+}
+
+}
+
+
+
+// AUTO CONNECT
+
+window.onload = async ()=>{
+
+if(window.ethereum){
+
+const acc =
+await ethereum.request({
+method:"eth_accounts"
+});
+
+if(acc.length>0){
+
+document.getElementById("connectBtn").click();
+
+}
+
+}
+
+};
+
+</script>
+
+</body>
+</html>
